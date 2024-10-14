@@ -47,13 +47,27 @@ module LocalUtils
     ActiveSupport::Notifications.unsubscribe(subscriber)
   end
 
-  def self.pretty_print_sql
-    ActiveSupport::Notifications.subscribe("sql.active_record") do |_, _, _, _, details|
-      sql = details[:sql]
-      next if sql =~ /SHOW FULL FIELDS|SHOW CREATE TABLE/
+  @pretty_print_active = false
+  @pp_subscription = nil
 
-      formatted_sql = format_and_colorize_sql(sql)
-      puts formatted_sql
+  # Method to toggle pretty print SQL on and off
+  def self.pretty_print_sql
+    if @pretty_print_active
+      # Unsubscribe if already active
+      ActiveSupport::Notifications.unsubscribe(@subscription)
+      @pretty_print_active = false
+      puts "Pretty print SQL is now OFF."
+    else
+      # Subscribe if not active
+      @pp_subscription = ActiveSupport::Notifications.subscribe("sql.active_record") do |_, _, _, _, details|
+        sql = details[:sql]
+        next if sql =~ /SHOW FULL FIELDS|SHOW CREATE TABLE/
+
+        formatted_sql = format_and_colorize_sql(sql)
+        puts formatted_sql
+      end
+      @pretty_print_active = true
+      puts "Pretty print SQL is now ON."
     end
   end
 
